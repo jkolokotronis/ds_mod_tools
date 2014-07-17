@@ -743,6 +743,7 @@ void convert_anim_timelines_to_frames(
 	IN  char**	timeline_key_names,
 	IN  int*	timeline_key_parent_ids,
 	IN	float*	timeline_key_alphas,
+	IN char**	anim_timeline_names,
 	OUT int&	anim_frame_count,
 	OUT int*	frame_element_count,
 	OUT int*    frame_element_start_indices,
@@ -797,9 +798,9 @@ void convert_anim_timelines_to_frames(
 				);
 
 			const int key_index = key_start_index + key_offset;
-
+			
 			char timeline_layer_name[1024];
-			sprintf(timeline_layer_name, "timeline_%i", i);
+			sprintf(timeline_layer_name, "%s", anim_timeline_names[i]);
 			strcpy(timeline_frame_names[element_index], timeline_key_names[key_index]);
 			strcpy(timeline_frame_layer_names[element_index], timeline_layer_name);
 			timeline_frame_z_indices[element_index] = timeline_key_z_indices[key_index];
@@ -1536,7 +1537,8 @@ void import_timelines(
 	OUT int*	timeline_key_times,
 	OUT int*	timeline_key_symbol_frame_nums,
 	OUT char**  timeline_key_names,
-	OUT float*	timeline_key_alphas
+	OUT float*	timeline_key_alphas,
+	OUT char**	anim_timeline_names
     )
 {
     int anim_index = 0;
@@ -1560,6 +1562,13 @@ void import_timelines(
                     s_timeline& timeline = *timeline_iter->second;
 					if(is_valid_timeline(timeline))
 					{
+						int layer_index = timeline.name.find("LAYER_");
+						if (layer_index != string::npos){
+							strcpy(anim_timeline_names[timeline_index], timeline.name.substr(layer_index + 6).c_str());
+						}
+						else{
+							strcpy(anim_timeline_names[timeline_index],  timeline.name.c_str());
+						}
 						anim_timeline_key_start_indices[timeline_index] = timeline_key_index;
 						anim_timeline_key_counts[timeline_index] = timeline.keys.size();					
 						for(s_timeline_key_map::iterator key_iter = timeline.keys.begin(); key_iter != timeline.keys.end(); ++key_iter)
@@ -2019,6 +2028,7 @@ void build_scml(
 	int* anim_bone_frame_start_indices = new int[anim_count];
 	int* anim_timeline_key_start_indices= new int[timeline_count];
 	int* anim_timeline_key_counts = new int[timeline_count];
+	char**	anim_timeline_names = allocate_strings(timeline_count, MAX_NAME_LENGTH);
 
     int* frame_indices = new int[frame_count];
     int2* frame_dimensions = new int2[frame_count];
@@ -2157,7 +2167,8 @@ void build_scml(
 		OUT timeline_key_times,
 		OUT timeline_key_symbol_frame_nums,
 		OUT timeline_key_names,
-		OUT timeline_key_alphas
+		OUT timeline_key_alphas,
+		OUT	anim_timeline_names
         );
 
 	import_bones(
@@ -2240,7 +2251,8 @@ void build_scml(
 			timeline_key_names,
 			timeline_key_parent_ids,
 			timeline_key_alphas,
-			anim_frame_counts[i],			
+			&anim_timeline_names[timeline_start_index],
+			anim_frame_counts[i],	
 			&frame_element_counts[frame_element_count_index],
 			&frame_element_start_indices[frame_element_count_index],
 			&frame_indices[frame_element_count_index],
@@ -2604,11 +2616,7 @@ int main( int argument_count, char** arguments )
 
 	char command_line[32768];
 	sprintf(command_line,
-#if defined(IS_WINDOWS)
 			"\"\"%s\" \"%s\" \"%s\" \"%s\"\"",
-#else
-			"\"%s\" \"%s\" \"%s\" \"%s\"",
-#endif
 			get_python(),
 			(app_folder/"compiler_scripts"/"zipanim.py").c_str(),
 			get_asset_temp_dir(),
@@ -2617,11 +2625,7 @@ int main( int argument_count, char** arguments )
 	run( command_line, true, "Packaging '%s'", output_package_file_path.basename().c_str() );
 
 	sprintf(command_line,
-#if defined(IS_WINDOWS)
 			"\"\"%s\" \"%s\" --skip_update_prefabs --outputdir \"%s\" --prefabsdir \"%s\" \"%s\"\"",
-#else
-			"\"%s\" \"%s\" --skip_update_prefabs --outputdir \"%s\" --prefabsdir \"%s\" \"%s\"",
-#endif
 			get_python(),
 			(app_folder/"exported"/"export.py").c_str(),
 			output_dir.c_str(),
