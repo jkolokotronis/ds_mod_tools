@@ -2616,25 +2616,33 @@ int main( int argument_count, char** arguments )
 
 	char command_line[32768];
 	sprintf(command_line,
-			"\"\"%s\" \"%s\" \"%s\" \"%s\"\"",
-			get_python(),
-			(app_folder/"compiler_scripts"/"zipanim.py").c_str(),
-			get_asset_temp_dir(),
-			output_package_file_path.c_str()
-	);
-	run( command_line, true, "Packaging '%s'", output_package_file_path.basename().c_str() );
+#if defined(IS_WINDOWS)
+		"\"\"%s\" \"%s\" \"%s\" \"%s\"\"",
+#else
+		"\"%s\" \"%s\" \"%s\" \"%s\"",
+#endif
+		get_python(),
+		(app_folder / "compiler_scripts" / "zipanim.py").c_str(),
+		get_asset_temp_dir(),
+		output_package_file_path.c_str()
+		);
+	run(command_line, true, "Packaging '%s'", output_package_file_path.basename().c_str());
 
 	sprintf(command_line,
-			"\"\"%s\" \"%s\" --skip_update_prefabs --outputdir \"%s\" --prefabsdir \"%s\" \"%s\"\"",
-			get_python(),
-			(app_folder/"exported"/"export.py").c_str(),
-			output_dir.c_str(),
-			(app_folder/"data").c_str(),
-			output_package_file_path.c_str()
-	);
-    run( command_line, true, "Building '%s'", output_package_file_path.basename().c_str() );
+#if defined(IS_WINDOWS)
+		"\"\"%s\" \"%s\" --skip_update_prefabs --outputdir \"%s\" --prefabsdir \"%s\" \"%s\"\"",
+#else
+		"\"%s\" \"%s\" --skip_update_prefabs --outputdir \"%s\" --prefabsdir \"%s\" \"%s\"",
+#endif
+		get_python(),
+		(app_folder / "exported" / "export.py").c_str(),
+		output_dir.c_str(),
+		(app_folder / "data").c_str(),
+		output_package_file_path.c_str()
+		);
+	run(command_line, true, "Building '%s'", output_package_file_path.basename().c_str());
 
-    end_log();
+	end_log();
 
 	return 0;
 }
