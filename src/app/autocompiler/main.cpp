@@ -76,7 +76,9 @@ void list_files( Path const& folder, char const* extension, file_list& files )
 				{
 					if(file.name[0] != '.')
 					{
-						list_files(folder/file.name, extension, files);
+						if(!(folder/file.name/"NOAUTOCOMPILE").exists()){
+							list_files(folder/file.name, extension, files);
+						}
 					}
 				}
 				else
